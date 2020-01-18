@@ -6,7 +6,7 @@ public class Ex13_9 {
 
 	public static void main(String[] args) {
 		ThreadEx9_1 th1 = new ThreadEx9_1();
-		th1.start();
+		th1.start(); // 쓰레드 시작
 		
 		String input = JOptionPane.showInputDialog("아무 값이나 입력하세요");
 		System.out.println("입력하신 값은 " + input + "입니다.");

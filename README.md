@@ -361,7 +361,265 @@ class ThreadEx_8_2 extends Thread {
 
 ### interrupt() - 실행 취소
 
-```
 
 ```
+package thread;
+
+import javax.swing.JOptionPane;
+
+public class Ex13_9 {
+
+	public static void main(String[] args) {
+		ThreadEx9_1 th1 = new ThreadEx9_1();
+		th1.start(); // 쓰레드 시작
+		
+		String input = JOptionPane.showInputDialog("아무 값이나 입력하세요");
+		System.out.println("입력하신 값은 " + input + "입니다.");
+		th1.interrupt();
+		System.out.println("isInterrupted() :" + th1.isInterrupted());
+	}
+
+}
+
+class ThreadEx9_1 extends Thread {
+	public void run() {
+		int i = 10;
+		
+		while(i !=0 && !isInterrupted()) {
+			System.out.println(i--);
+			for(long x=0; x < 2500000000L; x++);
+		}
+		System.out.println("카운트가 종료되었습니다.");
+	}
+}
+
+/*
+결과
+
+10
+9
+8
+7
+6
+입력하신 값은 123입니다.
+isInterrupted() :true
+카운트가 종료되었습니다.
+
+*/
+
+```
+
+- 쓰레드가 실행 중 일때 interrupt() 메서드가 '참' 일 때 쓰레드를 종료한다. 
+- 실행 중이 아닐 떄 interrupt() 가 '거짓'으로 나온다.
+
+
+<br><br>
+
+### suspend(), resume(), stop()
+
+과거에는 사용했지만, 현재는 권고사항이 아니다.
+
+<br><br>
+
+
+### join(), yield() - 대기
+
+
+```
+package thread;
+
+public class Ex13_11 {
+	static long startTime = 0;
+
+	public static void main(String[] args) {
+		ThreadEx11_1 th1 = new ThreadEx11_1();
+		ThreadEx11_2 th2 = new ThreadEx11_2();
+		th1.start();
+		th2.start();
+		startTime = System.currentTimeMillis();
+		
+		try {
+			th1.join(); // main쓰레드가 th1 의 작업이 끝날 때까지 기다린다.
+			th2.join(); // main쓰레드가 th2 의 작업이 끝날 때까지 기다린다.
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		
+		System.out.println("소요시간:" + (System.currentTimeMillis() - Ex13_11.startTime));
+		
+	}
+
+}
+
+
+class ThreadEx11_1 extends Thread {
+	public void run() {
+		for(int i=0; i < 300; i++) {
+			System.out.print(new String("-"));
+		}
+	}
+}
+
+class ThreadEx11_2 extends Thread {
+	public void run() {
+		for(int i=0; i < 300; i++) {
+			System.out.print(new String("|"));
+		}
+	}
+}
+
+/*
+결과
+
+---||||||----------------||||||||||||||||||||-----------------------------------------------------------------------------||------------------||||||||||||-------------------|||||||||||||||||||||||||||||||||||||||||||------------------------------||||-----------------------------------------------------------------------------------------------------------------------------------|||||||||-----||||||||||-||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||소요시간:11
+
+*/
+
+```
+
+- 쓰레드를 실행 시킨 수 join() 메서드로, main 쓰레드가 ThreadEx11_1, ThreadEx11_2 의 실행이 끝날 때까지 기다린다.
+
+
+<br><br>
+
+
+### 동기화
+
+같은 쓰레드 메서드를 실행 하였을 때 서로 간섭을 받지않기 위해, 
+
+
+```
+package thread;
+
+public class Ex13_12 {
+
+	public static void main(String[] args) {
+		Runnable r = new RunnableEx12();
+		new Thread(r).start();
+		new Thread(r).start();
+	}
+}
+
+class Account {
+	private int balance = 1000;
+	
+	public int getBalance() {
+		return balance;
+	}
+	
+	public void withdraw(int money) {
+		if(balance >= money) {
+			try { Thread.sleep(1000);  } catch(InterruptedException e) {}
+			balance -= money;
+		}
+	}
+}
+
+class RunnableEx12 implements Runnable {
+	
+	Account acc = new Account();
+
+	@Override
+	public void run() {
+		while(acc.getBalance() > 0) {
+			int money = (int)(Math.random() * 3 + 1) * 100;
+			
+			acc.withdraw(money);
+			System.out.println("money: "+ money + ", balance:" + acc.getBalance());
+		}
+	}
+	
+}
+
+/*
+결과
+
+money: 300, balance:700
+money: 200, balance:700
+money: 300, balance:400
+money: 100, balance:400
+money: 200, balance:100
+money: 200, balance:100
+money: 300, balance:100
+money: 300, balance:100
+money: 200, balance:100
+money: 300, balance:100
+money: 200, balance:100
+money: 200, balance:100
+money: 300, balance:100
+money: 300, balance:100
+money: 200, balance:100
+money: 300, balance:100
+money: 300, balance:100
+money: 100, balance:-100 // 음수가 나옴. 
+money: 100, balance:-100
+
+*/
+
+```
+
+- 같은 Runnable 쓰레드의 run() 메서드를 동시에 2개를 실행했다.
+- 서로 교착상태가 되어서 음수가 나오게 되었다.
+- 동기화 메서드를 통해 서로 싸우지 않도록 해결할 수 있다.
+
+
+<br><br>
+
+
+### synchronized 
+
+```
+package thread;
+
+public class Ex13_13 {
+
+	public static void main(String[] args) {
+		Runnable r = new RunnableEx13();
+		new Thread(r).start();
+		new Thread(r).start();		
+	}
+}
+
+class Account2 {
+	private int balance = 1000;
+	
+	public int getBalance() {
+		return balance;
+	}
+	
+	public synchronized void withdraw(int money) {
+		if(balance >= money) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {}
+			balance -= money;
+		}
+	}
+}
+
+class RunnableEx13 implements Runnable {
+	
+	Account2 acc = new Account2();
+
+	@Override
+	public void run() {
+		while(acc.getBalance() > 0) {
+			int money = (int)(Math.random() *3 + 1) * 100;
+			acc.withdraw(money);
+			System.out.println("money :"  +  money  + ", balance : " +acc.getBalance());
+		}
+	}
+	
+}
+```
+
+- 앞의 예제에서 withdraw() 메서드 앞에 synchronized 지시자를 붙인거 외에는 별다른게 없다.
+- synchronized 를 사용할 때 반드시 메서드안에서 참조하는 변수는 private 로 지정해야한다. 
+- 그렇지 않으면 synchronized 를 붙여도 의미가없다. 외부에서 변경가능하기 때문이다.
+ 
+ <br><br>
+ 
+### wait
+
+
  
