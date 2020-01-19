@@ -18,28 +18,28 @@ class Customer implements Runnable {
 			String name = Thread.currentThread().getName();
 			
 			if(eatFood())
-				System.out.println(name + " ate a"  + food);
+				System.out.println(name + " ate a "  + food);
 			else
 				System.out.println(name + " failed to eat. : :( ");
 		}
 	}
 
-	private boolean eatFood() {
-		return table.remove(food);
-	}
+	boolean eatFood() {return table.remove(food);}
+	
 }
 
 
 class Cook implements Runnable {
-	private Table table;
+	private Table table;	
 	
 	Cook(Table table) {this.table = table;}
 
 	@Override
 	public void run() {
 		while(true) {
-			int idx = (int)(Math.random() * table.dishNum());
-			table.add(table.dishNames[idx]);
+			int idx = (int)(Math.random() * table.dishNum());  
+			table.add(table.dishNames[idx]); // donut, donut, burger 중에 랜덤으로 가져옴.
+			
 			try {Thread.sleep(100);} catch (InterruptedException e) {}
 		}
 	}
@@ -61,11 +61,11 @@ class Table{
 	
 	public boolean remove(String dishName) {
 		synchronized (this) {
-			while(dishes.size() ==0) {
+			while(dishes.size() == 0) {
 				String name = Thread.currentThread().getName();
 				System.out.println(name + " is waiting");
 				try {
-					Thread.sleep(500);
+					Thread.sleep(500); // 0.5초
 				} catch (InterruptedException e) {}
 			}
 			
